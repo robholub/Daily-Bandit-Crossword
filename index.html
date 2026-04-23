@@ -10,6 +10,19 @@
     <title>Daily Bandit Crossword</title>
     <link rel="manifest" href="/manifest.json" />
     
+    <!-- Register Service Worker for Offline PWA Support -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          }).catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+        });
+      }
+    </script>
+    
     <!-- We load Three.js globally here to ensure the Mascot works instantly -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   </head>
