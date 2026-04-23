@@ -524,6 +524,36 @@ export default function App() {
   const usedWordsRef = useRef(new Set());
   const stateRef = useRef();
 
+  // --- Local Storage Resume (Instant Offline Support) ---
+  useEffect(() => {
+    const saved = localStorage.getItem('banditLocalSave');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (data && !data.isSolved && data.grid && data.grid.length > 0) {
+          setGrid(data.grid);
+          setClues(data.clues);
+          setActiveCell(data.activeCell || { x: 0, y: 0 });
+          setDirection(data.direction || 'across');
+          setTimeElapsed(data.timeElapsed || 0);
+          setHintsRemaining(data.hintsRemaining ?? 2);
+          usedWordsRef.current = new Set(data.usedWords || []);
+          setIsLoaded(true); // Immediately skip loading screens
+        }
+      } catch (e) { console.error("Error parsing local save", e); }
+    }
+  }, []);
+
+  // --- Save to Local Storage on every interaction ---
+  useEffect(() => {
+    if (grid.length > 0) {
+      localStorage.setItem('banditLocalSave', JSON.stringify({
+        grid, clues, activeCell, direction, timeElapsed, hintsRemaining, isSolved,
+        usedWords: Array.from(usedWordsRef.current)
+      }));
+    }
+  }, [grid, clues, activeCell, direction, timeElapsed, hintsRemaining, isSolved]);
+
   // --- Auth Setup ---
   useEffect(() => {
     const initAuth = async () => {
@@ -553,7 +583,17 @@ export default function App() {
       try {
         const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'gameState', 'save');
         const snap = await getDoc(docRef);
-        if (snap.exists()) {
+        
+        // Check if local storage already instantly resumed the game
+        const savedLocal = localStorage.getItem('banditLocalSave');
+        let hasActiveLocalGame = false;
+        if (savedLocal) {
+           const data = JSON.parse(savedLocal);
+           if (data.grid && data.grid.length > 0 && !data.isSolved) hasActiveLocalGame = true;
+        }
+
+        // Only load the cloud save if the user doesn't already have an active local game
+        if (snap.exists() && !hasActiveLocalGame) {
           const data = snap.data();
           setGrid(data.grid || []);
           setClues(data.clues || { across: {}, down: {} });
