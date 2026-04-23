@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "app.vercel.daily_bandit_crossword.twa",
-        "sha256_cert_fingerprints": ["BD:E6:A8:6F:F6:EE:47:BC:3B:34:27:03:15:FC:6B:20:77:49:E5:1E:8E:6D:92:95:95:51:E4:71:24:C0:57:9C"]
+        "sha256_cert_fingerprints": ["DD:DB:D3:BE:96:DD:F2:58:07:B8:4D:28:78:BE:CC:11:27:48:68:B7:16:E5:80:DC:08:2E:5C:43:AC:AB:24:D5"]
       }
     }]
