@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.daily_bandit_crossword.twa",
+        "sha256_cert_fingerprints": ["DD:DB:D3:BE:96:DD:F2:58:07:B8:4D:28:78:BE:CC:11:27:48:68:B7:16:E5:80:DC:08:2E:5C:43:AC:AB:24:D5"]
+      }
+    }]
