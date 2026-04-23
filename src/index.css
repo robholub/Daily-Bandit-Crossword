@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevents pull-to-refresh and bouncing on mobile browsers */
+body {
+  overscroll-behavior-y: contain;
+}
