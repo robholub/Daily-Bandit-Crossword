@@ -521,6 +521,9 @@ export default function App() {
   const [hintsRemaining, setHintsRemaining] = useState(2);
   const [isHintMode, setIsHintMode] = useState(false);
   
+  const [isGivenUp, setIsGivenUp] = useState(false);
+  const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false);
+
   const usedWordsRef = useRef(new Set());
   const stateRef = useRef();
 
@@ -537,6 +540,7 @@ export default function App() {
           setDirection(data.direction || 'across');
           setTimeElapsed(data.timeElapsed || 0);
           setHintsRemaining(data.hintsRemaining ?? 2);
+          setIsGivenUp(data.isGivenUp || false);
           usedWordsRef.current = new Set(data.usedWords || []);
           setIsLoaded(true); // Immediately skip loading screens
         }
@@ -548,11 +552,11 @@ export default function App() {
   useEffect(() => {
     if (grid.length > 0) {
       localStorage.setItem('banditLocalSave', JSON.stringify({
-        grid, clues, activeCell, direction, timeElapsed, hintsRemaining, isSolved,
+        grid, clues, activeCell, direction, timeElapsed, hintsRemaining, isSolved, isGivenUp,
         usedWords: Array.from(usedWordsRef.current)
       }));
     }
-  }, [grid, clues, activeCell, direction, timeElapsed, hintsRemaining, isSolved]);
+  }, [grid, clues, activeCell, direction, timeElapsed, hintsRemaining, isSolved, isGivenUp]);
 
   // --- Auth Setup ---
   useEffect(() => {
@@ -600,6 +604,7 @@ export default function App() {
           setHintsRemaining(data.hintsRemaining ?? 2);
           setTimeElapsed(data.timeElapsed || 0);
           setIsSolved(data.isSolved || false);
+          setIsGivenUp(data.isGivenUp || false);
           usedWordsRef.current = new Set(data.usedWords || []);
           setIsLoaded(true);
           
@@ -620,9 +625,9 @@ export default function App() {
   // --- Keep Reference to Latest State for Interval Sync ---
   useEffect(() => {
     stateRef.current = {
-      grid, clues, hintsRemaining, timeElapsed, isSolved, usedWords: Array.from(usedWordsRef.current)
+      grid, clues, hintsRemaining, timeElapsed, isSolved, isGivenUp, usedWords: Array.from(usedWordsRef.current)
     };
-  }, [grid, clues, hintsRemaining, timeElapsed, isSolved]);
+  }, [grid, clues, hintsRemaining, timeElapsed, isSolved, isGivenUp]);
 
   // --- Periodic Cloud Sync (Every 5 Seconds) ---
   useEffect(() => {
@@ -654,6 +659,8 @@ export default function App() {
     setDirection('across');
     setHintsRemaining(2);
     setIsHintMode(false);
+    setIsGivenUp(false);
+    setShowGiveUpConfirm(false);
 
     const firstValid = puzzleData.uiGrid.find(c => !c.isBlock);
     if (firstValid) setActiveCell({ x: firstValid.x, y: firstValid.y });
@@ -661,7 +668,7 @@ export default function App() {
     if (user && db) {
       const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'gameState', 'save');
       setDoc(docRef, {
-        grid: puzzleData.uiGrid, clues: puzzleData.clues, hintsRemaining: 2, timeElapsed: 0, isSolved: false, usedWords: Array.from(usedWordsRef.current)
+        grid: puzzleData.uiGrid, clues: puzzleData.clues, hintsRemaining: 2, timeElapsed: 0, isSolved: false, isGivenUp: false, usedWords: Array.from(usedWordsRef.current)
       }).catch(()=>{});
     }
 
@@ -725,7 +732,7 @@ export default function App() {
         setGrid(prev => {
           const newGrid = [...prev];
           const cellIndex = newGrid.findIndex(c => c.x === x && c.y === y);
-          newGrid[cellIndex] = { ...newGrid[cellIndex], value: newGrid[cellIndex].answer };
+          newGrid[cellIndex] = { ...newGrid[cellIndex], value: newGrid[cellIndex].answer, isError: false };
           return newGrid;
         });
         setHintsRemaining(prev => prev - 1);
@@ -751,7 +758,7 @@ export default function App() {
         const newGrid = [...prev];
         const cellIndex = newGrid.findIndex(c => c.x === activeCell.x && c.y === activeCell.y);
         if (newGrid[cellIndex].value !== '') {
-          newGrid[cellIndex] = { ...newGrid[cellIndex], value: '' };
+          newGrid[cellIndex] = { ...newGrid[cellIndex], value: '', isError: false };
         } else {
           const clue = getActiveClue();
           if (clue) {
@@ -760,7 +767,7 @@ export default function App() {
               const prevCell = clue.cells[idx - 1];
               setActiveCell({ x: prevCell.x, y: prevCell.y });
               const prevIndex = newGrid.findIndex(c => c.x === prevCell.x && c.y === prevCell.y);
-              newGrid[prevIndex] = { ...newGrid[prevIndex], value: '' };
+              newGrid[prevIndex] = { ...newGrid[prevIndex], value: '', isError: false };
             }
           }
         }
@@ -770,7 +777,7 @@ export default function App() {
       setGrid(prev => {
         const newGrid = [...prev];
         const cellIndex = newGrid.findIndex(c => c.x === activeCell.x && c.y === activeCell.y);
-        newGrid[cellIndex] = { ...newGrid[cellIndex], value: key };
+        newGrid[cellIndex] = { ...newGrid[cellIndex], value: key, isError: false };
         return newGrid;
       });
 
@@ -806,6 +813,32 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeCell, direction, isSolved, grid, isHintMode]);
 
+  const handleCheckErrors = () => {
+    if (isSolved) return;
+    setGrid(prev => prev.map(cell => {
+      if (!cell.isBlock && cell.value !== '' && cell.value !== cell.answer) {
+        return { ...cell, isError: true };
+      }
+      return cell;
+    }));
+  };
+
+  const handleGiveUp = () => {
+    setShowGiveUpConfirm(false);
+    setIsGivenUp(true);
+    setIsSolved(true);
+    setGrid(prev => prev.map(cell => {
+      if (!cell.isBlock) {
+        return { ...cell, value: cell.answer, isError: false };
+      }
+      return cell;
+    }));
+    if (user && db) {
+      const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'gameState', 'save');
+      setDoc(docRef, { ...stateRef.current, isSolved: true, isGivenUp: true }).catch(()=>{});
+    }
+  };
+
   const activeClue = getActiveClue();
 
   if (!isLoaded || grid.length === 0) {
@@ -835,21 +868,6 @@ export default function App() {
           <div className="text-base sm:text-xl font-sans font-bold border-2 border-black px-2 sm:px-3 py-1 bg-white">
             {formatTime(timeElapsed)}
           </div>
-          {hintsRemaining > 0 ? (
-            <button 
-              onClick={() => setIsHintMode(!isHintMode)}
-              className={`text-[10px] sm:text-xs font-sans font-bold px-2 py-1 border-2 border-black uppercase tracking-wider transition-all
-                ${isHintMode 
-                  ? 'bg-yellow-400 translate-y-px shadow-none' 
-                  : 'bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-px active:shadow-none'}`}
-            >
-              {isHintMode ? 'Cancel Hint' : `💡 Use Hint (${hintsRemaining})`}
-            </button>
-          ) : (
-            <span className="text-[9px] sm:text-[10px] font-sans font-bold text-gray-400 uppercase tracking-widest px-1">
-              No Hints Left
-            </span>
-          )}
         </div>
       </header>
 
@@ -905,9 +923,18 @@ export default function App() {
             const isCorrect = isSolved && cell.value === cell.answer;
 
             let bgColor = "bg-white";
-            if (isHintMode) bgColor = "bg-yellow-50 hover:bg-yellow-200"; 
-            else if (isFocused) bgColor = "bg-[#ffda00]";
-            else if (isHighlighted) bgColor = "bg-[#a7d8ff]";
+            let textColor = isCorrect && !isFocused ? 'text-green-700' : 'text-black';
+            
+            if (cell.isError) {
+              bgColor = "bg-red-100";
+              textColor = "text-red-700";
+            } else if (isHintMode) {
+              bgColor = "bg-yellow-50 hover:bg-yellow-200"; 
+            } else if (isFocused) {
+              bgColor = "bg-[#ffda00]";
+            } else if (isHighlighted) {
+              bgColor = "bg-[#a7d8ff]";
+            }
 
             return (
               <div
@@ -915,7 +942,7 @@ export default function App() {
                 onClick={() => handleCellClick(cell.x, cell.y)}
                 className={`
                   relative w-full h-full overflow-hidden transition-colors cursor-pointer min-w-0 min-h-0
-                  ${bgColor} ${isCorrect && !isFocused ? 'text-green-700' : 'text-black'}
+                  ${bgColor} ${textColor}
                 `}
               >
                 {cell.number && (
@@ -931,6 +958,40 @@ export default function App() {
           })}
         </div>
       </main>
+
+      {/* Action Bar */}
+      <div className="w-full max-w-lg mx-auto flex justify-between gap-2 px-2 pb-3 font-sans">
+        <button 
+          onClick={() => setIsHintMode(!isHintMode)}
+          disabled={hintsRemaining === 0 || isSolved}
+          className={`flex-1 text-xs sm:text-sm font-bold py-2 border-2 border-black uppercase tracking-wider transition-all
+            ${isHintMode 
+              ? 'bg-yellow-400 translate-y-px shadow-none' 
+              : hintsRemaining === 0 || isSolved
+                ? 'bg-gray-200 text-gray-400 border-gray-400 shadow-none'
+                : 'bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-px active:shadow-none'}`}
+        >
+          {isHintMode ? 'Cancel' : `💡 Hint (${hintsRemaining})`}
+        </button>
+        
+        <button 
+          onClick={handleCheckErrors}
+          disabled={isSolved}
+          className={`flex-1 text-xs sm:text-sm font-bold py-2 border-2 border-black uppercase tracking-wider transition-all bg-white
+            ${isSolved ? 'opacity-50 pointer-events-none shadow-none text-gray-400 border-gray-400' : 'shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-px active:shadow-none text-blue-700'}`}
+        >
+          ✔️ Check
+        </button>
+
+        <button 
+          onClick={() => setShowGiveUpConfirm(true)}
+          disabled={isSolved}
+          className={`flex-1 text-xs sm:text-sm font-bold py-2 border-2 border-black uppercase tracking-wider transition-all bg-white text-red-600
+            ${isSolved ? 'opacity-50 pointer-events-none shadow-none text-gray-400 border-gray-400' : 'shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-px active:shadow-none'}`}
+        >
+          🏳️ Give Up
+        </button>
+      </div>
 
       {/* Keyboard */}
       <div className={`w-full max-w-lg mx-auto p-1.5 sm:p-2 bg-gray-200 pb-6 sm:pb-8 border-t-[3px] border-black font-sans shadow-[0px_-4px_10px_rgba(0,0,0,0.1)] transition-opacity ${isHintMode ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -957,20 +1018,47 @@ export default function App() {
         </div>
       </div>
 
-      {/* Custom 3D Win Modal */}
+      {/* Give Up Confirm Modal */}
+      {showGiveUpConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 font-sans">
+          <div className="bg-white border-4 border-black p-6 rounded-none shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full text-center">
+              <h3 className="text-2xl font-black uppercase mb-4 tracking-wider">Give Up?</h3>
+              <p className="mb-6 font-medium text-gray-700">Are you sure you want to surrender and reveal the puzzle?</p>
+              <div className="flex gap-4">
+                <button onClick={() => setShowGiveUpConfirm(false)} className="flex-1 py-3 bg-gray-200 border-2 border-black font-bold uppercase tracking-widest hover:bg-gray-300 active:translate-y-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all">Cancel</button>
+                <button onClick={handleGiveUp} className="flex-1 py-3 bg-red-500 text-white border-2 border-black font-bold uppercase tracking-widest hover:bg-red-600 active:translate-y-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all">Reveal</button>
+              </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom 3D Win/End Modal */}
       {isSolved && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
           <div className="bg-white border-4 border-black p-6 sm:p-8 rounded-none shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center max-w-sm w-full transform animate-in zoom-in-95 duration-500 relative">
             
-            <div className="-mt-16 mb-2">
-              <ThreeRaccoonWin />
-            </div>
-
-            <h2 className="text-3xl font-serif font-black mb-2 mt-2 text-center uppercase border-b-2 border-black pb-2 w-full tracking-wider">Masterful!</h2>
-            <p className="text-gray-700 mb-6 text-center text-lg mt-2">
-              Bandit approves.<br/>You crushed today's puzzle in<br/>
-              <span className="text-black text-3xl font-black mt-2 block tracking-tight">{formatTime(timeElapsed)}</span>
-            </p>
+            {isGivenUp ? (
+              <>
+                <div className="-mt-12 mb-4 bg-gray-200 rounded-full border-2 border-black drop-shadow-xl p-2">
+                  <ThreeRaccoon />
+                </div>
+                <h2 className="text-3xl font-serif font-black mb-2 mt-2 text-center uppercase border-b-2 border-black pb-2 w-full tracking-wider">Revealed</h2>
+                <p className="text-gray-700 mb-6 text-center text-lg mt-2 font-medium">
+                  Don't worry, Bandit still loves you.<br/>Better luck next time!
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="-mt-16 mb-2">
+                  <ThreeRaccoonWin />
+                </div>
+                <h2 className="text-3xl font-serif font-black mb-2 mt-2 text-center uppercase border-b-2 border-black pb-2 w-full tracking-wider">Masterful!</h2>
+                <p className="text-gray-700 mb-6 text-center text-lg mt-2">
+                  Bandit approves.<br/>You crushed today's puzzle in<br/>
+                  <span className="text-black text-3xl font-black mt-2 block tracking-tight">{formatTime(timeElapsed)}</span>
+                </p>
+              </>
+            )}
             
             <button 
               onClick={startNewGame}
