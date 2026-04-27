@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bandit-crossword-v1';
+const CACHE_NAME = 'bandit-crossword-v2';
 
 // Install event: Caches the basic application shell
 self.addEventListener('install', (event) => {
