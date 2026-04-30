@@ -50,30 +50,38 @@ const ThreeRaccoon = () => {
 
       const raccoonGroup = new THREE.Group();
 
+      // --- Ultra-Realistic Procedural Fur Map ---
       const generateFurMap = () => {
         const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 512;
+        canvas.width = 1024; canvas.height = 1024;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#888888';
-        ctx.fillRect(0, 0, 512, 512);
-        for(let i=0; i<30000; i++) {
-          ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)';
-          const x = Math.random() * 512;
-          const y = Math.random() * 512;
-          ctx.fillRect(x, y, Math.random() * 2 + 1, Math.random() * 12 + 4);
+        ctx.fillStyle = '#6a645f'; // Warm grey base
+        ctx.fillRect(0, 0, 1024, 1024);
+        
+        // Draw 60,000 curved hair strands
+        for(let i=0; i<60000; i++) {
+          const isLight = Math.random() > 0.5;
+          ctx.strokeStyle = isLight ? `rgba(255,255,255,${Math.random()*0.15})` : `rgba(15,15,15,${Math.random()*0.25})`;
+          ctx.lineWidth = Math.random() * 2 + 0.5;
+          ctx.beginPath();
+          const x = Math.random() * 1024;
+          const y = Math.random() * 1024;
+          ctx.moveTo(x, y);
+          ctx.quadraticCurveTo(x + (Math.random()-0.5)*15, y + 15 + Math.random()*20, x + (Math.random()-0.5)*30, y + 30 + Math.random()*40);
+          ctx.stroke();
         }
         const tex = new THREE.CanvasTexture(canvas);
-        tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(2, 2);
+        tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(3, 3);
         return tex;
       };
 
       const furBump = generateFurMap();
-      const greyFur = new THREE.MeshStandardMaterial({ color: 0x5a5a5a, roughness: 0.8, bumpMap: furBump, bumpScale: 0.015 });
-      const lightGreyFur = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, roughness: 0.8, bumpMap: furBump, bumpScale: 0.015 });
-      const whiteFur = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.9, bumpMap: furBump, bumpScale: 0.02 });
-      const darkFur = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9, bumpMap: furBump, bumpScale: 0.02 });
-      const eyeMat = new THREE.MeshPhysicalMaterial({ color: 0x020202, metalness: 0.1, roughness: 0.0, clearcoat: 1.0, clearcoatRoughness: 0.05 });
-      const noseMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.2, metalness: 0.2 });
+      const greyFur = new THREE.MeshStandardMaterial({ color: 0x5a5550, roughness: 0.9, bumpMap: furBump, bumpScale: 0.02 });
+      const lightGreyFur = new THREE.MeshStandardMaterial({ color: 0x9a9590, roughness: 0.9, bumpMap: furBump, bumpScale: 0.02 });
+      const whiteFur = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.95, bumpMap: furBump, bumpScale: 0.025 });
+      const darkFur = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.95, bumpMap: furBump, bumpScale: 0.025 });
+      const eyeMat = new THREE.MeshPhysicalMaterial({ color: 0x050505, metalness: 0.8, roughness: 0.1, clearcoat: 1.0, clearcoatRoughness: 0.02 });
+      const noseMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.3, metalness: 0.1 });
 
       const head = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), greyFur);
       head.scale.set(1.15, 0.95, 0.9); raccoonGroup.add(head);
@@ -176,31 +184,37 @@ const ThreeRaccoonWin = () => {
 
       const raccoonGroup = new THREE.Group();
 
-      // Procedural Fur Map
+      // --- Ultra-Realistic Procedural Fur Map ---
       const generateFurMap = () => {
         const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 512;
+        canvas.width = 1024; canvas.height = 1024;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#888888';
-        ctx.fillRect(0, 0, 512, 512);
-        for(let i=0; i<30000; i++) {
-          ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)';
-          const x = Math.random() * 512;
-          const y = Math.random() * 512;
-          ctx.fillRect(x, y, Math.random() * 2 + 1, Math.random() * 12 + 4);
+        ctx.fillStyle = '#6a645f'; // Warm grey base
+        ctx.fillRect(0, 0, 1024, 1024);
+        
+        for(let i=0; i<60000; i++) {
+          const isLight = Math.random() > 0.5;
+          ctx.strokeStyle = isLight ? `rgba(255,255,255,${Math.random()*0.15})` : `rgba(15,15,15,${Math.random()*0.25})`;
+          ctx.lineWidth = Math.random() * 2 + 0.5;
+          ctx.beginPath();
+          const x = Math.random() * 1024;
+          const y = Math.random() * 1024;
+          ctx.moveTo(x, y);
+          ctx.quadraticCurveTo(x + (Math.random()-0.5)*15, y + 15 + Math.random()*20, x + (Math.random()-0.5)*30, y + 30 + Math.random()*40);
+          ctx.stroke();
         }
         const tex = new THREE.CanvasTexture(canvas);
-        tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(2, 2);
+        tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(3, 3);
         return tex;
       };
 
       const furBump = generateFurMap();
-      const greyFur = new THREE.MeshStandardMaterial({ color: 0x5a5a5a, roughness: 0.8, bumpMap: furBump, bumpScale: 0.015 });
-      const lightGreyFur = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, roughness: 0.8, bumpMap: furBump, bumpScale: 0.015 });
-      const whiteFur = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.9, bumpMap: furBump, bumpScale: 0.02 });
-      const darkFur = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9, bumpMap: furBump, bumpScale: 0.02 });
-      const eyeMat = new THREE.MeshPhysicalMaterial({ color: 0x020202, metalness: 0.1, roughness: 0.0, clearcoat: 1.0, clearcoatRoughness: 0.05 });
-      const noseMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.2, metalness: 0.2 });
+      const greyFur = new THREE.MeshStandardMaterial({ color: 0x5a5550, roughness: 0.9, bumpMap: furBump, bumpScale: 0.02 });
+      const lightGreyFur = new THREE.MeshStandardMaterial({ color: 0x9a9590, roughness: 0.9, bumpMap: furBump, bumpScale: 0.02 });
+      const whiteFur = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.95, bumpMap: furBump, bumpScale: 0.025 });
+      const darkFur = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.95, bumpMap: furBump, bumpScale: 0.025 });
+      const eyeMat = new THREE.MeshPhysicalMaterial({ color: 0x050505, metalness: 0.8, roughness: 0.1, clearcoat: 1.0, clearcoatRoughness: 0.02 });
+      const noseMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.3, metalness: 0.1 });
 
       // Head Base
       const head = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), greyFur);
@@ -252,15 +266,17 @@ const ThreeRaccoonWin = () => {
       leftArm.position.set(-0.9, -0.8, 0); leftArm.rotation.z = -Math.PI / 8;
       raccoonGroup.add(leftArm);
 
-      // --- Skeletal Right Arm (Thumbs Up) ---
+      // --- Skeletal Right Arm (Thumbs Up) - FIXED FORWARD POSITION ---
       const shoulder = new THREE.Group();
-      shoulder.position.set(0.9, -0.7, 0.2);
+      // Move shoulder massively forward in Z axis so it sits completely in front of the body
+      shoulder.position.set(0.85, -0.6, 1.2);
       raccoonGroup.add(shoulder);
 
       const upperArmGeo = new THREE.CylinderGeometry(0.18, 0.14, 0.8, 32);
       upperArmGeo.translate(0, -0.4, 0); 
       const upperArm = new THREE.Mesh(upperArmGeo, greyFur);
-      upperArm.rotation.set(Math.PI / 4, 0, Math.PI / 5);  
+      // Angle the arm firmly forward towards the camera
+      upperArm.rotation.set(Math.PI / 3, 0, Math.PI / 8);  
       shoulder.add(upperArm);
 
       const elbow = new THREE.Group();
@@ -273,13 +289,16 @@ const ThreeRaccoonWin = () => {
       const forearmGeo = new THREE.CylinderGeometry(0.14, 0.11, 0.7, 32);
       forearmGeo.translate(0, -0.35, 0);
       const forearm = new THREE.Mesh(forearmGeo, greyFur);
-      forearm.rotation.x = -Math.PI / 1.5; 
+      // Bend sharply upwards
+      forearm.rotation.x = -Math.PI / 1.3; 
+      forearm.rotation.z = -Math.PI / 12; // Point slightly back inward
       elbow.add(forearm);
 
       // Wrist & Paw
       const fist = new THREE.Group();
       fist.position.set(0, -0.75, 0);
-      fist.rotation.x = Math.PI / 1.5; // Keeps fist pointing UP
+      fist.rotation.x = Math.PI / 1.3; // Point fist upwards relative to forearm
+      fist.rotation.y = -Math.PI / 4;  // Twist wrist so thumb faces up properly
       forearm.add(fist);
 
       const palm = new THREE.Mesh(new THREE.SphereGeometry(0.18, 32, 32), darkFur);
@@ -298,8 +317,21 @@ const ThreeRaccoonWin = () => {
       const thumb = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), darkFur);
       thumb.scale.set(1, 2.5, 1);
       thumb.position.set(-0.15, 0.22, 0.05);
-      thumb.rotation.z = Math.PI / 8; // Tilted slightly out
+      thumb.rotation.z = Math.PI / 8; 
       fist.add(thumb);
+      
+      // Add Whiskers to Win Mascot
+      const whiskerMat = new THREE.LineBasicMaterial({ color: 0xeeeeee, transparent: true, opacity: 0.6 });
+      for(let i=0; i<12; i++) {
+        // Left
+        const lPoints = [new THREE.Vector3(-0.2, -0.2, 1.1), new THREE.Vector3(-1.4 - Math.random()*0.4, -0.2 + (Math.random()-0.5)*0.6, 1.0 + (Math.random()-0.5)*0.3)];
+        const lGeo = new THREE.BufferGeometry().setFromPoints(lPoints);
+        raccoonGroup.add(new THREE.Line(lGeo, whiskerMat));
+        // Right
+        const rPoints = [new THREE.Vector3(0.2, -0.2, 1.1), new THREE.Vector3(1.4 + Math.random()*0.4, -0.2 + (Math.random()-0.5)*0.6, 1.0 + (Math.random()-0.5)*0.3)];
+        const rGeo = new THREE.BufferGeometry().setFromPoints(rPoints);
+        raccoonGroup.add(new THREE.Line(rGeo, whiskerMat));
+      }
 
       scene.add(raccoonGroup);
 
@@ -322,9 +354,8 @@ const ThreeRaccoonWin = () => {
         rightEar.rotation.z = -Math.PI / 5 - Math.cos(time * 2) * 0.05;
 
         // Dynamic fluid thumbs up pumping
-        shoulder.rotation.z = Math.PI / 5 + Math.sin(time * 1.5) * 0.1;
-        shoulder.rotation.x = Math.PI / 4 + Math.sin(time * 1.5) * 0.1;
-        elbow.rotation.x = -Math.PI / 1.5 + Math.cos(time * 1.5) * 0.1;
+        shoulder.rotation.x = Math.sin(time * 4) * 0.08;
+        elbow.rotation.x = Math.sin(time * 4) * 0.08;
 
         renderer.render(scene, camera);
       };
