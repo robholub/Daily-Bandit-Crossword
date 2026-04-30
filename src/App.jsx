@@ -266,17 +266,21 @@ const ThreeRaccoonWin = () => {
       leftArm.position.set(-0.9, -0.8, 0); leftArm.rotation.z = -Math.PI / 8;
       raccoonGroup.add(leftArm);
 
-      // --- Skeletal Right Arm (Thumbs Up) - FIXED FORWARD POSITION ---
+      // --- Skeletal Right Arm (Thumbs Up) - FIXED ANCHOR & DETAILED HAND ---
       const shoulder = new THREE.Group();
-      // Move shoulder massively forward in Z axis so it sits completely in front of the body
-      shoulder.position.set(0.85, -0.6, 1.2);
+      // Embed the shoulder deep into the torso to connect it fully
+      shoulder.position.set(0.75, -1.0, 0.5);
       raccoonGroup.add(shoulder);
+
+      // Visible shoulder joint
+      const shoulderJoint = new THREE.Mesh(new THREE.SphereGeometry(0.2, 32, 32), greyFur);
+      shoulder.add(shoulderJoint);
 
       const upperArmGeo = new THREE.CylinderGeometry(0.18, 0.14, 0.8, 32);
       upperArmGeo.translate(0, -0.4, 0); 
       const upperArm = new THREE.Mesh(upperArmGeo, greyFur);
-      // Angle the arm firmly forward towards the camera
-      upperArm.rotation.set(Math.PI / 3, 0, Math.PI / 8);  
+      // Angle the arm firmly outward and forward towards the camera
+      upperArm.rotation.set(Math.PI / 2.2, 0, Math.PI / 6);  
       shoulder.add(upperArm);
 
       const elbow = new THREE.Group();
@@ -289,36 +293,55 @@ const ThreeRaccoonWin = () => {
       const forearmGeo = new THREE.CylinderGeometry(0.14, 0.11, 0.7, 32);
       forearmGeo.translate(0, -0.35, 0);
       const forearm = new THREE.Mesh(forearmGeo, greyFur);
-      // Bend sharply upwards
-      forearm.rotation.x = -Math.PI / 1.3; 
-      forearm.rotation.z = -Math.PI / 12; // Point slightly back inward
+      // Bend sharply upwards and slightly inward towards body
+      forearm.rotation.x = -Math.PI / 1.4; 
+      forearm.rotation.z = -Math.PI / 10; 
       elbow.add(forearm);
 
-      // Wrist & Paw
+      // --- Detailed Hand & Thumbs Up ---
       const fist = new THREE.Group();
       fist.position.set(0, -0.75, 0);
-      fist.rotation.x = Math.PI / 1.3; // Point fist upwards relative to forearm
-      fist.rotation.y = -Math.PI / 4;  // Twist wrist so thumb faces up properly
+      // Orient the wrist so the palm faces inward and the front of the hand faces the viewer
+      fist.rotation.x = Math.PI / 1.5; 
+      fist.rotation.y = -Math.PI / 2;
       forearm.add(fist);
 
-      const palm = new THREE.Mesh(new THREE.SphereGeometry(0.18, 32, 32), darkFur);
-      palm.scale.set(1, 0.9, 1.1);
+      // Wrist joint to smooth the connection
+      const wristSphere = new THREE.Mesh(new THREE.SphereGeometry(0.11, 32, 32), darkFur);
+      fist.add(wristSphere);
+
+      // Palm (flattened sphere)
+      const palm = new THREE.Mesh(new THREE.SphereGeometry(0.16, 32, 32), darkFur);
+      palm.position.set(0, -0.15, 0);
+      palm.scale.set(0.8, 1, 0.6);
       fist.add(palm);
 
-      // Fingers
-      for(let i=0; i<3; i++) {
-          const finger = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), darkFur);
-          finger.scale.set(2.2, 1, 1);
-          finger.position.set(-0.05, -0.08 + i*0.08, 0.18);
+      // 4 Distinct Curled Fingers (Horizontally stacked making a clear fist)
+      for(let i=0; i<4; i++) {
+          const finger = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.26, 16), darkFur);
+          finger.rotation.z = Math.PI / 2; // Make them run horizontally
+          // Stacked vertically, shifted forward on Z to look curled over the front of the palm
+          finger.position.set(0, -0.04 - (i * 0.07), 0.1);
           fist.add(finger);
       }
 
-      // Proud Thick Thumb
-      const thumb = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), darkFur);
-      thumb.scale.set(1, 2.5, 1);
-      thumb.position.set(-0.15, 0.22, 0.05);
-      thumb.rotation.z = Math.PI / 8; 
-      fist.add(thumb);
+      // Explicit, proud, multi-part Thumbs Up
+      const thumbGroup = new THREE.Group();
+      // Base of thumb attaches to the side/top of the palm
+      thumbGroup.position.set(0, 0.0, 0); 
+      
+      const thumbBody = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.3, 16), darkFur);
+      thumbBody.position.set(0, 0.15, 0);
+      const thumbTip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 16), darkFur);
+      thumbTip.position.set(0, 0.3, 0);
+      
+      thumbGroup.add(thumbBody);
+      thumbGroup.add(thumbTip);
+      
+      // Angle the thumb slightly outward for a natural upright look
+      thumbGroup.rotation.z = Math.PI / 12;
+      thumbGroup.rotation.x = Math.PI / 12;
+      fist.add(thumbGroup);
       
       // Add Whiskers to Win Mascot
       const whiskerMat = new THREE.LineBasicMaterial({ color: 0xeeeeee, transparent: true, opacity: 0.6 });
